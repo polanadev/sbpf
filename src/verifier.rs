@@ -19,6 +19,17 @@ use crate::{
 };
 use thiserror::Error;
 
+#[cfg(not(feature = "std"))]
+mod compat {
+    pub use core::ops::Range;
+}
+
+#[cfg(feature = "std")]
+mod compat {
+    pub use std::ops::Range;
+}
+
+pub use compat::*;
 /// Error definitions
 #[derive(Debug, Error, Eq, PartialEq)]
 pub enum VerifierError {
@@ -151,7 +162,7 @@ fn check_load_dw(prog: &[u8], insn_ptr: usize) -> Result<(), VerifierError> {
 fn check_jmp_offset(
     prog: &[u8],
     insn_ptr: usize,
-    function_range: &std::ops::Range<usize>,
+    function_range: &Range<usize>,
 ) -> Result<(), VerifierError> {
     let insn = ebpf::get_insn(prog, insn_ptr);
 

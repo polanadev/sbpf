@@ -1,18 +1,36 @@
+use crate::{
+    ebpf,
+    elf::ElfError,
+    vm::{Config, ContextObject, EbpfVm},
+};
+
 #[cfg(not(feature = "std"))]
-use core::{fmt, mem, ops::Range, slice};
+mod compat {
+    extern crate alloc;
+    #[cfg(not(feature = "shuttle-test"))]
+    pub use alloc::sync::Arc;
+    pub use alloc::{
+        boxed::Box,
+        collections::{BTreeMap, BTreeSet},
+        format,
+        string::String,
+        vec::{self, Vec},
+    };
+    pub use core::{fmt, mem};
+    pub use hashbrown::{hash_map::Entry, HashMap};
+}
 
 #[cfg(feature = "std")]
-use {
-    crate::{
-        ebpf,
-        elf::ElfError,
-        vm::{Config, ContextObject, EbpfVm},
-    },
-    std::boxed::Box,
-    std::collections::{btree_map::Entry, BTreeMap},
-    std::vec,
-    std::vec::Vec,
-};
+mod compat {
+    pub use {
+        std::boxed::Box,
+        std::collections::{btree_map::Entry, BTreeMap},
+        std::vec,
+        std::vec::Vec,
+    };
+}
+
+pub use compat::*;
 
 /// Defines a set of sbpf_version of an executable
 #[derive(Debug, PartialEq, PartialOrd, Eq, Clone, Copy)]
@@ -213,13 +231,12 @@ impl<T: Copy + PartialEq> FunctionRegistry<T> {
 
     /// Calculate memory size
     pub fn mem_size(&self) -> usize {
-        std::mem::size_of::<Self>().saturating_add(self.map.iter().fold(
+        mem::size_of::<Self>().saturating_add(self.map.iter().fold(
             0,
             |state: usize, (_, (name, value))| {
                 state.saturating_add(
-                    std::mem::size_of_val(value).saturating_add(
-                        std::mem::size_of_val(name).saturating_add(name.capacity()),
-                    ),
+                    mem::size_of_val(value)
+                        .saturating_add(mem::size_of_val(name).saturating_add(name.capacity())),
                 )
             },
         ))
@@ -281,9 +298,9 @@ impl<C: ContextObject> BuiltinProgram<C> {
 
     /// Calculate memory size
     pub fn mem_size(&self) -> usize {
-        std::mem::size_of::<Self>()
+        mem::size_of::<Self>()
             .saturating_add(if self.config.is_some() {
-                std::mem::size_of::<Config>()
+                mem::size_of::<Config>()
             } else {
                 0
             })
@@ -303,17 +320,16 @@ impl<C: ContextObject> BuiltinProgram<C> {
     }
 }
 
-impl<C: ContextObject> std::fmt::Debug for BuiltinProgram<C> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+impl<C: ContextObject> fmt::Debug for BuiltinProgram<C> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         unsafe {
             writeln!(
                 f,
                 "registry: {:?}",
                 // `derive(Debug)` does not know that `C: ContextObject` does not need to implement `Debug`
-                std::mem::transmute::<
-                    &FunctionRegistry<BuiltinFunction<C>>,
-                    &FunctionRegistry<usize>,
-                >(&self.sparse_registry),
+                mem::transmute::<&FunctionRegistry<BuiltinFunction<C>>, &FunctionRegistry<usize>>(
+                    &self.sparse_registry
+                ),
             )?;
         }
         Ok(())

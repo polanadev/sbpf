@@ -21,14 +21,26 @@ use combine::{
 };
 
 #[cfg(not(feature = "std"))]
-use core::{fmt, mem, ops::Range, slice};
+mod compat {
+    extern crate alloc;
+    pub use alloc::{
+        collections::{BTreeMap, BTreeSet},
+        format,
+        string::{String, ToString},
+        vec::Vec,
+    };
+}
 
 #[cfg(feature = "std")]
-use std::{
-    format,
-    string::{String, ToString},
-    vec::Vec,
-};
+mod compat {
+    pub use std::{
+        format,
+        string::{String, ToString},
+        vec::Vec,
+    };
+}
+
+pub use compat::*;
 
 /// Operand of an instruction.
 #[derive(Clone, Debug, PartialEq, Eq)]

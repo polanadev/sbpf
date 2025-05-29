@@ -16,14 +16,36 @@ use crate::{
 };
 
 #[cfg(not(feature = "std"))]
-use core::{fmt, mem, ops::Range, slice};
+mod compat {
+    extern crate alloc;
+    pub use alloc::{
+        collections::{BTreeMap, BTreeSet},
+        format,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    };
+    pub use hashbrown::HashMap;
+}
 
 #[cfg(feature = "std")]
-use std::{
-    collections::BTreeMap,
-    format, println,
-    string::{String, ToString},
-};
+mod compat {
+    pub use std::{
+        format,
+        string::{String, ToString},
+        vec::Vec,
+    };
+}
+
+pub use compat::*;
+
+// #[cfg(not(feature = "std"))]
+// macro_rules! println {
+//     ($($arg:tt)*) => {
+//         // TODO: implement based on target platform
+//         0
+//     };
+// }
 
 fn resolve_label(cfg_nodes: &BTreeMap<usize, CfgNode>, pc: usize) -> &str {
     cfg_nodes
@@ -46,7 +68,8 @@ fn alu_reg_str(name: &str, insn: &ebpf::Insn) -> String {
 fn byteswap_str(name: &str, insn: &ebpf::Insn) -> String {
     match insn.imm {
         16 | 32 | 64 => {}
-        _ => println!("[Disassembler] Warning: Invalid offset value for {name} insn"),
+        // _ => println!("[Disassembler] Warning: Invalid offset value for {name} insn"), FIXME
+        _ => {}
     }
     format!("{}{} r{}", name, insn.imm, insn.dst)
 }

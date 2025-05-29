@@ -24,22 +24,35 @@ use crate::{
 };
 
 #[cfg(not(feature = "std"))]
-use core::{fmt, mem, ops::Range, slice};
+mod compat {
+    extern crate alloc;
+    #[cfg(not(feature = "shuttle-test"))]
+    pub use alloc::sync::Arc;
+    pub use alloc::{
+        collections::{BTreeMap, BTreeSet},
+        format,
+        string::{String, ToString},
+        vec::{self, Vec},
+    };
+    pub use hashbrown::HashMap;
+    #[cfg(feature = "shuttle-test")]
+    use shuttle::sync::Arc;
+}
 
 #[cfg(feature = "std")]
-use std::{
-    collections::HashMap,
-    format,
-    string::{String, ToString},
-    vec,
-    vec::Vec,
-};
+mod compat {
+    #[cfg(feature = "shuttle-test")]
+    use shuttle::sync::Arc;
+    #[cfg(not(feature = "shuttle-test"))]
+    use std::sync::Arc;
+    pub use std::{
+        format,
+        string::{String, ToString},
+        vec::Vec,
+    };
+}
 
-#[cfg(not(feature = "shuttle-test"))]
-use std::sync::Arc;
-
-#[cfg(feature = "shuttle-test")]
-use shuttle::sync::Arc;
+pub use compat::*;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum InstructionType {

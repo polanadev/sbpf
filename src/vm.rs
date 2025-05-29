@@ -23,16 +23,34 @@ use crate::{
 };
 
 #[cfg(not(feature = "std"))]
-use core::{fmt, mem, ops::Range, slice};
+mod compat {
+    pub use core::{mem, ops::RangeInclusive, ptr};
+    pub use embedded_io::{Error, ErrorKind, Write};
+    extern crate alloc;
+    pub use alloc::{
+        collections::{BTreeMap, BTreeSet},
+        format,
+        string::String,
+        vec,
+        vec::Vec,
+    };
+    #[cfg(not(feature = "shuttle-test"))]
+    pub use {
+        alloc::sync::Arc,
+        rand::{thread_rng, Rng},
+    };
+}
 
 #[cfg(feature = "std")]
-use std::{collections::BTreeMap, fmt::Debug, vec, vec::Vec};
+mod compat {
+    pub use std::{
+        collections::BTreeMap,
+        fmt::Debug,
+        vec::{self, Vec},
+    };
+}
 
-#[cfg(not(feature = "shuttle-test"))]
-use {
-    rand::{thread_rng, Rng},
-    std::sync::Arc,
-};
+pub use compat::*;
 
 #[cfg(feature = "shuttle-test")]
 use shuttle::{
@@ -82,7 +100,7 @@ pub struct Config {
     /// Use aligned memory mapping
     pub aligned_memory_mapping: bool,
     /// Allowed [SBPFVersion]s
-    pub enabled_sbpf_versions: std::ops::RangeInclusive<SBPFVersion>,
+    pub enabled_sbpf_versions: RangeInclusive<SBPFVersion>,
 }
 
 impl Config {
@@ -320,7 +338,7 @@ impl<'a, C: ContextObject> EbpfVm<'a, C> {
             memory_mapping = MemoryMapping::new_identity();
         }
         EbpfVm {
-            host_stack_pointer: std::ptr::null_mut(),
+            host_stack_pointer: ptr::null_mut(),
             call_depth: 0,
             context_object_pointer: context_object,
             previous_instruction_meter: 0,
@@ -389,7 +407,7 @@ impl<'a, C: ContextObject> EbpfVm<'a, C> {
             0
         };
         let mut result = ProgramResult::Ok(0);
-        std::mem::swap(&mut result, &mut self.program_result);
+        mem::swap(&mut result, &mut self.program_result);
         (instruction_count, result)
     }
 
@@ -397,7 +415,7 @@ impl<'a, C: ContextObject> EbpfVm<'a, C> {
     pub fn invoke_function(&mut self, function: BuiltinFunction<C>) {
         function(
             unsafe {
-                std::ptr::addr_of_mut!(*self)
+                ptr::addr_of_mut!(*self)
                     .cast::<u64>()
                     .offset(get_runtime_environment_key() as isize)
                     .cast::<Self>()

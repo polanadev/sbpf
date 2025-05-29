@@ -29,25 +29,50 @@ use crate::jit::{JitCompiler, JitProgram};
 use byteorder::{ByteOrder, LittleEndian};
 
 #[cfg(not(feature = "std"))]
-use core::{fmt, mem, ops::Range, slice};
+mod compat {
+    extern crate alloc;
+    #[cfg(not(feature = "shuttle-test"))]
+    pub use alloc::sync::Arc;
+
+    pub use alloc::{
+        collections::{BTreeMap, BTreeSet},
+        fmt, format, str,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    };
+    pub use core::{mem, ops::Range};
+    pub use hashbrown::HashMap;
+
+    #[cfg(feature = "shuttle-test")]
+    use shuttle::sync::Arc;
+}
+
+// #[cfg(not(feature = "std"))]
+// macro_rules! println {
+//     ($($arg:tt)*) => {
+//         // TODO: implement based on target platform
+//         None
+//     };
+// }
 
 #[cfg(feature = "std")]
-use std::{
-    collections::BTreeMap,
-    fmt::Debug,
-    format, mem,
-    ops::Range,
-    println, str,
-    string::{String, ToString},
-    vec,
-    vec::Vec,
-};
+mod compat {
+    #[cfg(not(feature = "shuttle-test"))]
+    use std::sync::Arc;
+    pub use std::{
+        collections::BTreeMap,
+        fmt::Debug,
+        format, mem,
+        ops::Range,
+        println, str,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    };
+}
 
-#[cfg(not(feature = "shuttle-test"))]
-use std::sync::Arc;
-
-#[cfg(feature = "shuttle-test")]
-use shuttle::sync::Arc;
+pub use compat::*;
 
 /// Error definitions
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -153,9 +178,7 @@ fn get_section(elf: &Elf64, name: &[u8]) -> Result<Elf64Shdr, ElfError> {
     }
 
     Err(ElfError::SectionNotFound(
-        std::str::from_utf8(name)
-            .unwrap_or("UTF-8 error")
-            .to_string(),
+        str::from_utf8(name).unwrap_or("UTF-8 error").to_string(),
     ))
 }
 
@@ -390,7 +413,7 @@ impl<C: ContextObject> Executable<C> {
         const E_FLAGS_OFFSET: usize = 48;
         let e_flags = LittleEndian::read_u32(
             bytes
-                .get(E_FLAGS_OFFSET..E_FLAGS_OFFSET.saturating_add(std::mem::size_of::<u32>()))
+                .get(E_FLAGS_OFFSET..E_FLAGS_OFFSET.saturating_add(mem::size_of::<u32>()))
                 .ok_or(ElfParserError::OutOfBounds)?,
         );
         let config = loader.get_config();
@@ -1362,10 +1385,10 @@ impl<C: ContextObject> Executable<C> {
     #[allow(dead_code)]
     fn dump_data(name: &str, prog: &[u8]) {
         let mut eight_bytes: Vec<u8> = Vec::new();
-        println!("{name}");
+        // println!("{name}"); FIXME
         for i in prog.iter() {
             if eight_bytes.len() >= 7 {
-                println!("{eight_bytes:02X?}");
+                // println!("{eight_bytes:02X?}"); FIXME
                 eight_bytes.clear();
             } else {
                 eight_bytes.push(*i);

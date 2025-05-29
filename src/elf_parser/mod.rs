@@ -4,10 +4,28 @@ pub mod consts;
 pub mod types;
 
 #[cfg(not(feature = "std"))]
-use core::{fmt, mem, ops::Range, slice};
+mod compat {
+    extern crate alloc;
+    pub use alloc::{
+        collections::{BTreeMap, BTreeSet},
+        format, str,
+        string::{String, ToString},
+        vec::Vec,
+    };
+    pub use core::{fmt, mem, ops::Range, slice};
+}
 
 #[cfg(feature = "std")]
-use std::{fmt, mem, ops::Range, slice, string::String, string::ToString};
+mod compat {
+    pub use std::{
+        fmt, mem,
+        ops::Range,
+        slice, str,
+        string::{String, ToString},
+    };
+}
+
+pub use compat::*;
 
 use crate::{ArithmeticOverflow, ErrCheckedArithmetic};
 use {consts::*, types::*};
@@ -275,7 +293,7 @@ impl<'a> Elf64<'a> {
     /// Parses the file header.
     pub fn parse_file_header(
         elf_bytes: &'a [u8],
-    ) -> Result<(std::ops::Range<usize>, &'a Elf64Ehdr), ElfParserError> {
+    ) -> Result<(Range<usize>, &'a Elf64Ehdr), ElfParserError> {
         let file_header_range = 0..mem::size_of::<Elf64Ehdr>();
         let file_header_bytes = elf_bytes
             .get(file_header_range.clone())
@@ -295,9 +313,9 @@ impl<'a> Elf64<'a> {
     /// Parses the program header table.
     pub fn parse_program_header_table(
         elf_bytes: &'a [u8],
-        file_header_range: std::ops::Range<usize>,
+        file_header_range: Range<usize>,
         file_header: &Elf64Ehdr,
-    ) -> Result<(std::ops::Range<usize>, &'a [Elf64Phdr]), ElfParserError> {
+    ) -> Result<(Range<usize>, &'a [Elf64Phdr]), ElfParserError> {
         let program_header_table_range = file_header.e_phoff as usize
             ..mem::size_of::<Elf64Phdr>()
                 .err_checked_mul(file_header.e_phnum as usize)?
@@ -311,10 +329,10 @@ impl<'a> Elf64<'a> {
     /// Parses the section header table.
     pub fn parse_section_header_table(
         elf_bytes: &'a [u8],
-        file_header_range: std::ops::Range<usize>,
+        file_header_range: Range<usize>,
         file_header: &Elf64Ehdr,
-        program_header_table_range: std::ops::Range<usize>,
-    ) -> Result<(std::ops::Range<usize>, &'a [Elf64Shdr]), ElfParserError> {
+        program_header_table_range: Range<usize>,
+    ) -> Result<(Range<usize>, &'a [Elf64Shdr]), ElfParserError> {
         let section_header_table_range = file_header.e_shoff as usize
             ..mem::size_of::<Elf64Shdr>()
                 .err_checked_mul(file_header.e_shnum as usize)?
@@ -644,7 +662,7 @@ impl fmt::Debug for Elf64<'_> {
                 section_header.sh_name,
                 SECTION_NAME_LENGTH_MAXIMUM,
             )
-            .and_then(|name| std::str::from_utf8(name).map_err(|_| ElfParserError::InvalidString))
+            .and_then(|name| str::from_utf8(name).map_err(|_| ElfParserError::InvalidString))
             .unwrap();
             writeln!(f, "{section_name}")?;
             writeln!(f, "{section_header:#X?}")?;
@@ -661,7 +679,7 @@ impl fmt::Debug for Elf64<'_> {
                         SYMBOL_NAME_LENGTH_MAXIMUM,
                     )
                     .and_then(|name| {
-                        std::str::from_utf8(name).map_err(|_| ElfParserError::InvalidString)
+                        str::from_utf8(name).map_err(|_| ElfParserError::InvalidString)
                     })
                     .unwrap();
                     writeln!(f, "{symbol_name}")?;

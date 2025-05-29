@@ -22,10 +22,27 @@ use byteorder::{ByteOrder, LittleEndian};
 use hash32::{Hasher, Murmur3Hasher};
 
 #[cfg(not(feature = "std"))]
-use core::{fmt, mem, ops::Range, slice};
+mod compat {
+    extern crate alloc;
+    pub use alloc::{
+        collections::{BTreeMap, BTreeSet},
+        fmt, format,
+        string::String,
+        vec,
+        vec::Vec,
+    };
+    // pub use core::hash::Hasher;
+    pub use core::hash::Hash;
+    pub use hashbrown::HashMap;
+}
 
 #[cfg(feature = "std")]
-use std::{fmt, format, hash::Hash, print, vec::Vec};
+mod compat {
+    pub use hash32::Hasher;
+    pub use std::{fmt, format, hash::Hash, print, vec::Vec};
+}
+
+pub use compat::*;
 
 /// Solana BPF version flag
 pub const EF_SBPF_V2: u32 = 0x20;
