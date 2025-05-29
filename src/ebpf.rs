@@ -20,7 +20,12 @@
 
 use byteorder::{ByteOrder, LittleEndian};
 use hash32::{Hasher, Murmur3Hasher};
-use std::{fmt, hash::Hash};
+
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
+use std::{fmt, format, hash::Hash, print, vec::Vec};
 
 /// Solana BPF version flag
 pub const EF_SBPF_V2: u32 = 0x20;

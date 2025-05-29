@@ -27,7 +27,21 @@ use crate::{
 #[cfg(all(feature = "jit", not(target_os = "windows"), target_arch = "x86_64"))]
 use crate::jit::{JitCompiler, JitProgram};
 use byteorder::{ByteOrder, LittleEndian};
-use std::{collections::BTreeMap, fmt::Debug, mem, ops::Range, str};
+
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
+use std::{
+    collections::BTreeMap,
+    fmt::Debug,
+    format, mem,
+    ops::Range,
+    println, str,
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 
 #[cfg(not(feature = "shuttle-test"))]
 use std::sync::Arc;

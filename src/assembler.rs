@@ -22,7 +22,18 @@ use crate::{
     program::{BuiltinProgram, FunctionRegistry, SBPFVersion},
     vm::ContextObject,
 };
-use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
+use std::{
+    collections::HashMap,
+    format,
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 
 #[cfg(not(feature = "shuttle-test"))]
 use std::sync::Arc;

@@ -21,7 +21,12 @@ use crate::{
     program::{BuiltinFunction, BuiltinProgram, FunctionRegistry, SBPFVersion},
     static_analysis::Analysis,
 };
-use std::{collections::BTreeMap, fmt::Debug};
+
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
+use std::{collections::BTreeMap, fmt::Debug, vec, vec::Vec};
 
 #[cfg(not(feature = "shuttle-test"))]
 use {

@@ -1,6 +1,9 @@
 //! Aligned memory
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
 
-use std::{mem, ptr};
+#[cfg(feature = "std")]
+use std::{fmt, mem, ops::Range, ptr, slice, string::String, string::ToString, vec, vec::Vec};
 
 /// Scalar types, aka "plain old data"
 pub trait Pod {}

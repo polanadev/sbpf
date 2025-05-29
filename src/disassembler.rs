@@ -14,7 +14,16 @@ use crate::{
     static_analysis::CfgNode,
     vm::ContextObject,
 };
-use std::collections::BTreeMap;
+
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
+use std::{
+    collections::BTreeMap,
+    format, println,
+    string::{String, ToString},
+};
 
 fn resolve_label(cfg_nodes: &BTreeMap<usize, CfgNode>, pc: usize) -> &str {
     cfg_nodes

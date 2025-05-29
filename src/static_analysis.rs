@@ -10,7 +10,18 @@ use crate::{
     vm::{ContextObject, DynamicAnalysis},
 };
 use rustc_demangle::demangle;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    format,
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 
 /// Register state recorded after executing one instruction
 ///

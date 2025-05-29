@@ -6,9 +6,18 @@
 
 //! This module contains error and result types
 
-use {
-    crate::{elf::ElfError, memory_region::AccessType, verifier::VerifierError},
-    std::error::Error,
+use crate::{elf::ElfError, memory_region::AccessType, verifier::VerifierError};
+
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
+use std::{
+    boxed::Box,
+    error::Error,
+    string::{String, ToString},
+    vec,
+    vec::Vec,
 };
 
 /// Error definitions

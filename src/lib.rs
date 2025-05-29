@@ -14,6 +14,17 @@
 #![allow(clippy::literal_string_with_formatting_args)]
 #![deny(clippy::arithmetic_side_effects)]
 #![deny(clippy::ptr_as_ptr)]
+#![no_std]
+#![cfg_attr(feature = "std", allow(unused_imports))]
+
+#[cfg(feature = "std")]
+extern crate std;
+
+#[cfg(feature = "std")]
+use std::vec::Vec;
+
+#[cfg(feature = "std")]
+use std::string::String;
 
 extern crate byteorder;
 extern crate combine;

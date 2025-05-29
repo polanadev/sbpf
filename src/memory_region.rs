@@ -7,12 +7,20 @@ use crate::{
     program::SBPFVersion,
     vm::Config,
 };
+
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
 use std::{
     array,
+    boxed::Box,
     cell::{Cell, UnsafeCell},
     fmt, mem,
     ops::Range,
     ptr::{self, copy_nonoverlapping},
+    vec,
+    vec::Vec,
 };
 
 /* Explanation of the Gapped Memory

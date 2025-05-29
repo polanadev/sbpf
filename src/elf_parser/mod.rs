@@ -3,7 +3,11 @@
 pub mod consts;
 pub mod types;
 
-use std::{fmt, mem, ops::Range, slice};
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
+use std::{fmt, mem, ops::Range, slice, string::String, string::ToString};
 
 use crate::{ArithmeticOverflow, ErrCheckedArithmetic};
 use {consts::*, types::*};

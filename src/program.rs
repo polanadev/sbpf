@@ -1,11 +1,17 @@
-//! Common interface for built-in and user supplied programs
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
 use {
     crate::{
         ebpf,
         elf::ElfError,
         vm::{Config, ContextObject, EbpfVm},
     },
+    std::boxed::Box,
     std::collections::{btree_map::Entry, BTreeMap},
+    std::vec,
+    std::vec::Vec,
 };
 
 /// Defines a set of sbpf_version of an executable

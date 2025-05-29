@@ -20,6 +20,16 @@ use combine::{
     Parser, Stream,
 };
 
+#[cfg(not(feature = "std"))]
+use core::{fmt, mem, ops::Range, slice};
+
+#[cfg(feature = "std")]
+use std::{
+    format,
+    string::{String, ToString},
+    vec::Vec,
+};
+
 /// Operand of an instruction.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Operand {
@@ -183,6 +193,14 @@ mod tests {
         ident, instruction, integer, mnemonic, operand, parse, register, Operand, Statement,
     };
     use combine::Parser;
+
+    #[cfg(feature = "std")]
+    use std::{
+        format,
+        string::{String, ToString},
+        vec,
+        vec::Vec,
+    };
 
     // Unit tests for the different kinds of parsers.
 
