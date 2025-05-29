@@ -24,6 +24,7 @@ use hash32::{Hasher, Murmur3Hasher};
 #[cfg(not(feature = "std"))]
 mod compat {
     extern crate alloc;
+    pub use alloc::collections::BTreeMap as HashMap;
     pub use alloc::{
         collections::{BTreeMap, BTreeSet},
         fmt, format,
@@ -31,9 +32,7 @@ mod compat {
         vec,
         vec::Vec,
     };
-    // pub use core::hash::Hasher;
     pub use core::hash::Hash;
-    pub use hashbrown::HashMap;
 }
 
 #[cfg(feature = "std")]

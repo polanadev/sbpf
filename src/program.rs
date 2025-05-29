@@ -7,8 +7,10 @@ use crate::{
 #[cfg(not(feature = "std"))]
 mod compat {
     extern crate alloc;
+    pub use alloc::collections::{btree_map::Entry, BTreeMap as HashMap};
     #[cfg(not(feature = "shuttle-test"))]
     pub use alloc::sync::Arc;
+
     pub use alloc::{
         boxed::Box,
         collections::{BTreeMap, BTreeSet},
@@ -17,7 +19,6 @@ mod compat {
         vec::{self, Vec},
     };
     pub use core::{fmt, mem};
-    pub use hashbrown::{hash_map::Entry, HashMap};
 }
 
 #[cfg(feature = "std")]

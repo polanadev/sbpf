@@ -5,7 +5,7 @@ use crate::disassembler::disassemble_instruction;
 use crate::{
     ebpf,
     elf::Executable,
-    error::EbpfError,
+    // error::EbpfError, // FIXME
     program::SBPFVersion,
     vm::{ContextObject, DynamicAnalysis},
 };
@@ -16,6 +16,7 @@ mod compat {
     pub use embedded_io::{Error, ErrorKind, Write};
 
     extern crate alloc;
+    pub use alloc::collections::{btree_map::Entry, BTreeMap as HashMap, BTreeSet as HashSet};
     #[cfg(not(feature = "shuttle-test"))]
     pub use alloc::sync::Arc;
     pub use alloc::{
@@ -27,7 +28,6 @@ mod compat {
         vec::Vec,
     };
     pub use core::{cmp, fmt, mem, ops, ops::Range};
-    pub use hashbrown::{hash_map::Entry, HashMap, HashSet};
 }
 
 #[cfg(feature = "std")]
@@ -42,6 +42,12 @@ mod compat {
 }
 
 pub use compat::*;
+
+#[cfg(feature = "std")]
+type Result<T> = std::io::Result<T>;
+
+#[cfg(not(feature = "std"))]
+type Result<T> = core::result::Result<T, &'static str>;
 
 /// Register state recorded after executing one instruction
 ///
@@ -191,9 +197,7 @@ pub struct Analysis<'a> {
 
 impl<'a> Analysis<'a> {
     /// Analyze an executable statically
-    pub fn from_executable<C: ContextObject>(
-        executable: &'a Executable<C>,
-    ) -> Result<Self, EbpfError> {
+    pub fn from_executable<C: ContextObject>(executable: &'a Executable<C>) -> Result<Self> {
         let (_program_vm_addr, program) = executable.get_text_bytes();
         let mut functions = BTreeMap::new();
         for (key, (function_name, pc)) in executable.get_function_registry().iter() {
@@ -463,9 +467,9 @@ impl<'a> Analysis<'a> {
             let is_function = self.functions.contains_key(&pc);
             if is_function || cfg_node.sources != vec![*last_basic_block] {
                 if is_function && !suppress_extra_newlines {
-                    writeln!(output)?;
+                    writeln!(output).map_err(|_| "fix this")?;
                 }
-                writeln!(output, "{}:", cfg_node.label)?;
+                writeln!(output, "{}:", cfg_node.label).map_err(|_| "fix this")?;
             }
             let last_insn = &self.instructions[cfg_node.instructions.end - 1];
             *last_basic_block = if last_insn.opc == ebpf::JA {
@@ -499,7 +503,8 @@ impl<'a> Analysis<'a> {
                 insn.ptr,
                 &mut last_basic_block,
             )?;
-            writeln!(output, "    {}", self.disassemble_instruction(insn, pc))?;
+            writeln!(output, "    {}", self.disassemble_instruction(insn, pc))
+                .map_err(|_| "fix this")?;
         }
         Ok(())
     }
@@ -531,7 +536,8 @@ impl<'a> Analysis<'a> {
                 &entry[0..11],
                 pc,
                 self.disassemble_instruction(insn, pc),
-            )?;
+            )
+            .map_err(|_| "fix this")?;
         }
         Ok(())
     }
@@ -598,7 +604,7 @@ impl<'a> Analysis<'a> {
                     }
                 })
                 .collect::<String>()
-            )?;
+            ).map_err(|_| "fix this")?;
             if let Some(dynamic_analysis) = dynamic_analysis {
                 if let Some(recorded_edges) = dynamic_analysis.edges.get(&cfg_node_start) {
                     for destination in recorded_edges.keys() {
@@ -638,7 +644,8 @@ impl<'a> Analysis<'a> {
   edge [
     fontname=\"Courier New\";
   ];"
-        )?;
+        )
+        .map_err(|_| "fix this")?;
         const MAX_CELL_CONTENT_LENGTH: usize = 15;
         let mut function_iter = self.functions.keys().peekable();
         while let Some(function_start) = function_iter.next() {
@@ -648,13 +655,15 @@ impl<'a> Analysis<'a> {
                 self.instructions.last().unwrap().ptr + 1
             };
             let mut alias_nodes = HashSet::new();
-            writeln!(output, "  subgraph cluster_{} {{", *function_start)?;
+            writeln!(output, "  subgraph cluster_{} {{", *function_start)
+                .map_err(|_| "fix this")?;
             writeln!(
                 output,
                 "    label={:?};",
                 html_escape(&self.cfg_nodes[function_start].label)
-            )?;
-            writeln!(output, "    tooltip=lbb_{};", *function_start)?;
+            )
+            .map_err(|_| "fix this")?;
+            writeln!(output, "    tooltip=lbb_{};", *function_start).map_err(|_| "fix this")?;
             emit_cfg_node(
                 output,
                 dynamic_analysis,
@@ -668,13 +677,16 @@ impl<'a> Analysis<'a> {
                     output,
                     "    alias_{}_lbb_{} [",
                     *function_start, *alias_node
-                )?;
-                writeln!(output, "        label=lbb_{:?};", *alias_node)?;
-                writeln!(output, "        tooltip=lbb_{:?};", *alias_node)?;
-                writeln!(output, "        URL=\"#lbb_{:?}\";", *alias_node)?;
-                writeln!(output, "    ];")?;
+                )
+                .map_err(|_| "fix this")?;
+                writeln!(output, "        label=lbb_{:?};", *alias_node).map_err(|_| "fix this")?;
+                writeln!(output, "        tooltip=lbb_{:?};", *alias_node)
+                    .map_err(|_| "fix this")?;
+                writeln!(output, "        URL=\"#lbb_{:?}\";", *alias_node)
+                    .map_err(|_| "fix this")?;
+                writeln!(output, "    ];").map_err(|_| "fix this")?;
             }
-            writeln!(output, "  }}")?;
+            writeln!(output, "  }}").map_err(|_| "fix this")?;
         }
         for (function_range, cfg_node_start, cfg_node) in self.iter_cfg_by_function() {
             if cfg_node_start != cfg_node.dominator_parent {
@@ -682,7 +694,8 @@ impl<'a> Analysis<'a> {
                     output,
                     "  lbb_{} -> lbb_{} [style=dotted; arrowhead=none];",
                     cfg_node_start, cfg_node.dominator_parent,
-                )?;
+                )
+                .map_err(|_| "fix this")?;
             }
             let mut edges: BTreeMap<usize, usize> = cfg_node
                 .destinations
@@ -712,18 +725,20 @@ impl<'a> Analysis<'a> {
                         .map(|destination| format!("lbb_{}", *destination))
                         .collect::<Vec<String>>()
                         .join(" ")
-                )?;
+                )
+                .map_err(|_| "fix this")?;
             } else if let Some(dynamic_analysis) = dynamic_analysis {
                 for (destination, counter) in edges {
-                    write!(output, "  lbb_{cfg_node_start} -> ")?;
+                    write!(output, "  lbb_{cfg_node_start} -> ").map_err(|_| "fix this")?;
                     if function_range.contains(&destination) {
-                        write!(output, "lbb_{destination}")?;
+                        write!(output, "lbb_{destination}").map_err(|_| "fix this")?;
                     } else {
                         write!(
                             output,
                             "alias_{0}_lbb_{1}",
                             function_range.start, destination
-                        )?;
+                        )
+                        .map_err(|_| "fix this")?;
                     }
                     writeln!(
                         output,
@@ -732,11 +747,12 @@ impl<'a> Analysis<'a> {
                         counter as f32 / (dynamic_analysis.edge_counter_max as f32 * 3.0)
                             + 2.0 / 3.0,
                         (counter != 0) as i32,
-                    )?;
+                    )
+                    .map_err(|_| "fix this")?;
                 }
             }
         }
-        writeln!(output, "}}")?;
+        writeln!(output, "}}").map_err(|_| "fix this")?;
         Ok(())
     }
 

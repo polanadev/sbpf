@@ -201,18 +201,19 @@ pub fn parse(input: &str) -> Result<Vec<Statement>, String> {
 
 #[cfg(test)]
 mod tests {
+
+    use super::compat::*;
+    // FIXME
+    #[cfg(not(feature = "std"))]
+    extern crate alloc;
+    #[cfg(not(feature = "std"))]
+    use alloc::vec;
+    // END FIXME
+
     use super::{
         ident, instruction, integer, mnemonic, operand, parse, register, Operand, Statement,
     };
     use combine::Parser;
-
-    #[cfg(feature = "std")]
-    use std::{
-        format,
-        string::{String, ToString},
-        vec,
-        vec::Vec,
-    };
 
     // Unit tests for the different kinds of parsers.
 

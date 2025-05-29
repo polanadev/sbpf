@@ -29,7 +29,7 @@ pub use compat::*;
 type Result<T> = std::io::Result<T>;
 
 #[cfg(not(feature = "std"))]
-type Result<T> = core::result::Result<T, &'static str>;
+type Result<T> = core::result::Result<T, SimpleError>;
 
 /// Scalar types, aka "plain old data"
 pub trait Pod {}
@@ -148,10 +148,11 @@ impl<const ALIGN: usize> AlignedMemory<ALIGN> {
         ) {
             (Some(new_len), Some(allocation_end)) if new_len <= allocation_end => new_len,
             _ => {
-                return Err(Error::new(
-                    ErrorKind::InvalidInput,
-                    "aligned memory fill_write failed",
-                ))
+                // return Err(Error::new(
+                //     ErrorKind::InvalidInput,
+                //     "aligned memory fill_write failed",
+                // ))
+                return Err(SimpleError("fix me"));
             }
         };
         if self.zero_up_to_max_len && value == 0 {
@@ -206,6 +207,26 @@ impl<const ALIGN: usize> Clone for AlignedMemory<ALIGN> {
     }
 }
 
+// Simple error type
+#[derive(Debug)]
+pub struct SimpleError(&'static str);
+
+impl embedded_io::Error for SimpleError {
+    fn kind(&self) -> embedded_io::ErrorKind {
+        embedded_io::ErrorKind::Other
+    }
+}
+
+impl core::fmt::Display for SimpleError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl<const ALIGN: usize> embedded_io::ErrorType for AlignedMemory<ALIGN> {
+    type Error = SimpleError;
+}
+
 impl<const ALIGN: usize> Write for AlignedMemory<ALIGN> {
     fn write(&mut self, buf: &[u8]) -> Result<usize> {
         match (
@@ -214,10 +235,11 @@ impl<const ALIGN: usize> Write for AlignedMemory<ALIGN> {
         ) {
             (Some(new_len), Some(allocation_end)) if new_len <= allocation_end => {}
             _ => {
-                return Err(Error::new(
-                    ErrorKind::InvalidInput,
-                    "aligned memory write failed",
-                ))
+                // return Err(Error::new(
+                //     ErrorKind::InvalidInput,
+                //     "aligned memory write failed",
+                // ))
+                return Err(SimpleError("fix me"));
             }
         }
         self.mem.extend_from_slice(buf);
@@ -244,7 +266,7 @@ pub fn is_memory_aligned(ptr: usize, align: usize) -> bool {
 #[allow(clippy::arithmetic_side_effects)]
 #[cfg(test)]
 mod tests {
-    use {super::*, std::io::Write};
+    use {super::*, Write};
 
     fn do_test<const ALIGN: usize>() {
         let mut aligned_memory = AlignedMemory::<ALIGN>::with_capacity(10);

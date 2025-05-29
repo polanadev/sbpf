@@ -42,7 +42,6 @@ mod compat {
         vec::Vec,
     };
     pub use core::{mem, ops::Range};
-    pub use hashbrown::HashMap;
 
     #[cfg(feature = "shuttle-test")]
     use shuttle::sync::Arc;

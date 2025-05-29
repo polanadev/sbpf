@@ -26,6 +26,7 @@ use crate::{
 #[cfg(not(feature = "std"))]
 mod compat {
     extern crate alloc;
+    pub use alloc::collections::BTreeMap as HashMap;
     #[cfg(not(feature = "shuttle-test"))]
     pub use alloc::sync::Arc;
     pub use alloc::{
@@ -34,7 +35,7 @@ mod compat {
         string::{String, ToString},
         vec::{self, Vec},
     };
-    pub use hashbrown::HashMap;
+
     #[cfg(feature = "shuttle-test")]
     use shuttle::sync::Arc;
 }

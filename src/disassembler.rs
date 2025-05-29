@@ -18,6 +18,7 @@ use crate::{
 #[cfg(not(feature = "std"))]
 mod compat {
     extern crate alloc;
+    pub use alloc::collections::BTreeMap as HashMap;
     pub use alloc::{
         collections::{BTreeMap, BTreeSet},
         format,
@@ -25,7 +26,6 @@ mod compat {
         vec,
         vec::Vec,
     };
-    pub use hashbrown::HashMap;
 }
 
 #[cfg(feature = "std")]
