@@ -69,11 +69,11 @@ macro_rules! writeln_compat {
 macro_rules! writeln_compat {
     // Case 1: Just the writer, no format args
     ($dst:expr) => {
-        writeln!($dst).map_err(|e| e.kind())
+        writeln!($dst).map_err(|_| "writeln error")
     };
     // Case 2: Writer + format string and args
     ($dst:expr, $($arg:tt)*) => {
-        writeln!($dst, $($arg)*).map_err(|e| e.kind())
+        writeln!($dst, $($arg)*).map_err(|_| "writeln error")
     };
 }
 
@@ -87,7 +87,7 @@ macro_rules! write_compat {
 #[cfg(not(feature = "std"))]
 macro_rules! write_compat {
     ($dst:expr, $($arg:tt)*) => {
-        write!($dst, $($arg)*).map_err(|e| e.kind())
+        write!($dst, $($arg)*).map_err(|_| "writeln error")
     };
 }
 

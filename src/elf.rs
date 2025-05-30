@@ -1373,7 +1373,7 @@ impl<C: ContextObject> Executable<C> {
     }
 
     #[allow(dead_code)]
-    fn dump_data(name: &str, prog: &[u8]) {
+    fn dump_data(_name: &str, prog: &[u8]) {
         let mut eight_bytes: Vec<u8> = Vec::new();
         // println!("{name}"); FIXME
         for i in prog.iter() {

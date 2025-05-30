@@ -35,10 +35,7 @@ mod compat {
         vec::Vec,
     };
     #[cfg(not(feature = "shuttle-test"))]
-    pub use {
-        alloc::sync::Arc,
-        rand::{thread_rng, Rng},
-    };
+    pub use {alloc::sync::Arc, rand::Rng};
 }
 
 #[cfg(feature = "std")]
@@ -65,7 +62,7 @@ use shuttle::{
 /// Shift the RUNTIME_ENVIRONMENT_KEY by this many bits to the LSB
 ///
 /// 3 bits for 8 Byte alignment, and 1 bit to have encoding space for the RuntimeEnvironment.
-const PROGRAM_ENVIRONMENT_KEY_SHIFT: u32 = 4;
+// const PROGRAM_ENVIRONMENT_KEY_SHIFT: u32 = 4;
 // static RUNTIME_ENVIRONMENT_KEY: std::sync::OnceLock<i32> = std::sync::OnceLock::<i32>::new(); FIXME
 
 /// Returns (and if not done before generates) the encryption key for the VM pointer

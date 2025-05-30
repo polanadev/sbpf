@@ -13,12 +13,14 @@
 use combine::{
     attempt, between,
     char::{alpha_num, char, digit, hex_digit, spaces, string},
-    combine_parse_partial, combine_parser_impl,
-    easy::{Error, Errors, Info},
-    eof, many, many1, one_of, optional, parse_mode, parser, sep_by, skip_many,
+    combine_parse_partial, combine_parser_impl, eof, many, many1, one_of, optional, parse_mode,
+    parser, sep_by, skip_many,
     stream::state::{SourcePosition, State},
     Parser, Stream,
 };
+
+#[cfg(feature = "std")]
+use combine::easy::{Error, Errors, Info};
 
 #[cfg(not(feature = "std"))]
 mod compat {
@@ -148,6 +150,7 @@ parser! {
     }
 }
 
+#[cfg(feature = "std")]
 fn format_info(info: &Info<char, &str>) -> String {
     match *info {
         Info::Token(x) => format!("{x:?}"),
@@ -157,6 +160,7 @@ fn format_info(info: &Info<char, &str>) -> String {
     }
 }
 
+#[cfg(feature = "std")]
 fn format_error(error: &Error<char, &str>) -> String {
     match *error {
         Error::Unexpected(ref x) => format!("unexpected {}", format_info(x)),
@@ -166,6 +170,7 @@ fn format_error(error: &Error<char, &str>) -> String {
     }
 }
 
+#[cfg(feature = "std")]
 fn format_parse_error(parse_error: &Errors<char, &str, SourcePosition>) -> String {
     format!(
         "Parse error at line {} column {}: {}",
@@ -180,22 +185,45 @@ fn format_parse_error(parse_error: &Errors<char, &str, SourcePosition>) -> Strin
     )
 }
 
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
 /// Parse a string into a list of instructions.
 ///
 /// The instructions are not validated and may have invalid names and operand types.
 pub fn parse(input: &str) -> Result<Vec<Statement>, String> {
-    match spaces()
-        .with(many(
-            attempt(label())
-                .or(directive())
-                .or(instruction())
-                .skip(spaces()),
-        ))
-        .skip(eof())
-        .easy_parse(State::with_positioner(input, SourcePosition::default()))
+    #[cfg(feature = "std")]
     {
-        Ok((insts, _)) => Ok(insts),
-        Err(err) => Err(format_parse_error(&err)),
+        match spaces()
+            .with(many(
+                attempt(label())
+                    .or(directive())
+                    .or(instruction())
+                    .skip(spaces()),
+            ))
+            .skip(eof())
+            .easy_parse(State::with_positioner(input, SourcePosition::default()))
+        {
+            Ok((insts, _)) => Ok(insts),
+            Err(err) => Err(format_parse_error(&err)),
+        }
+    }
+
+    #[cfg(not(feature = "std"))]
+    {
+        match spaces()
+            .with(many(
+                attempt(label())
+                    .or(directive())
+                    .or(instruction())
+                    .skip(spaces()),
+            ))
+            .skip(eof())
+            .parse(State::with_positioner(input, SourcePosition::default()))
+        {
+            Ok((insts, _)) => Ok(insts),
+            Err(_err) => Err("Parse error".to_string()),
+        }
     }
 }
 

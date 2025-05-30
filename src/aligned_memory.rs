@@ -1,6 +1,6 @@
 //! Aligned memory
 #[cfg(not(feature = "std"))]
-use embedded_io::{Error, ErrorKind, Write};
+use embedded_io::Write;
 
 #[cfg(not(feature = "std"))]
 mod compat {

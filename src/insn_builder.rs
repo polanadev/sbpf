@@ -9,9 +9,6 @@
 
 use crate::ebpf::*;
 
-#[cfg(not(feature = "std"))]
-use core::{fmt, mem, ops::Range, slice};
-
 #[cfg(feature = "std")]
 use std::{vec, vec::Vec};
 

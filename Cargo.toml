@@ -26,7 +26,7 @@ gdbstub = { version = "0.6.2", optional = true }
 hash32 = "0.3.1"
 log = { version = "0.4.2", default-features = false }
 thiserror = { version = "2.0.9", default-features = false }
-rand = { version = "0.8.5", features = ["small_rng"] }
+rand = { version = "0.8.5", features = ["small_rng"], default-features = false }
 rustc-demangle = "0.1"
 shuttle = { version = "0.7.1", optional = true }
 embedded-io = "0.6"
@@ -45,7 +45,7 @@ libc = { version = "0.2", optional = true }
 [features]
 # Look at why --no-default-features isn't being respected when we have features here
 default = []
-std = ["byteorder/std", "log/std", "thiserror/std", "combine/std"]
+std = ["byteorder/std", "log/std", "thiserror/std", "combine/std", "rand/std"]
 jit = ["libc", "winapi"]
 jit-enable-host-stack-frames = ["jit"]
 fuzzer-not-safe-for-production = ["arbitrary"]
