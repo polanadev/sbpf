@@ -148,10 +148,12 @@ impl<const ALIGN: usize> AlignedMemory<ALIGN> {
         ) {
             (Some(new_len), Some(allocation_end)) if new_len <= allocation_end => new_len,
             _ => {
-                // return Err(Error::new(
-                //     ErrorKind::InvalidInput,
-                //     "aligned memory fill_write failed",
-                // ))
+                #[cfg(feature = "std")]
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "aligned memory fill_write failed",
+                ));
+                #[cfg(not(feature = "std"))]
                 return Err(SimpleError("fix me"));
             }
         };
@@ -235,10 +237,12 @@ impl<const ALIGN: usize> Write for AlignedMemory<ALIGN> {
         ) {
             (Some(new_len), Some(allocation_end)) if new_len <= allocation_end => {}
             _ => {
-                // return Err(Error::new(
-                //     ErrorKind::InvalidInput,
-                //     "aligned memory write failed",
-                // ))
+                #[cfg(feature = "std")]
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "aligned memory write failed",
+                ));
+                #[cfg(not(feature = "std"))]
                 return Err(SimpleError("fix me"));
             }
         }

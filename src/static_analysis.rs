@@ -53,6 +53,44 @@ type Result<T> = std::io::Result<T>;
 #[cfg(not(feature = "std"))]
 type Result<T> = core::result::Result<T, &'static str>;
 
+#[cfg(feature = "std")]
+macro_rules! writeln_compat {
+    // Case 1: Just the writer, no format args
+    ($dst:expr) => {
+        writeln!($dst)
+    };
+    // Case 2: Writer + format string and args
+    ($dst:expr, $($arg:tt)*) => {
+        writeln!($dst, $($arg)*)
+    };
+}
+
+#[cfg(not(feature = "std"))]
+macro_rules! writeln_compat {
+    // Case 1: Just the writer, no format args
+    ($dst:expr) => {
+        writeln!($dst).map_err(|e| e.kind())
+    };
+    // Case 2: Writer + format string and args
+    ($dst:expr, $($arg:tt)*) => {
+        writeln!($dst, $($arg)*).map_err(|e| e.kind())
+    };
+}
+
+#[cfg(feature = "std")]
+macro_rules! write_compat {
+    ($dst:expr, $($arg:tt)*) => {
+        write!($dst, $($arg)*)
+    };
+}
+
+#[cfg(not(feature = "std"))]
+macro_rules! write_compat {
+    ($dst:expr, $($arg:tt)*) => {
+        write!($dst, $($arg)*).map_err(|e| e.kind())
+    };
+}
+
 /// Register state recorded after executing one instruction
 ///
 /// The last register is the program counter (aka pc).
@@ -471,9 +509,9 @@ impl<'a> Analysis<'a> {
             let is_function = self.functions.contains_key(&pc);
             if is_function || cfg_node.sources != vec![*last_basic_block] {
                 if is_function && !suppress_extra_newlines {
-                    writeln!(output).map_err(|_| "fix this")?;
+                    writeln_compat!(output)?;
                 }
-                writeln!(output, "{}:", cfg_node.label).map_err(|_| "fix this")?;
+                writeln_compat!(output, "{}:", cfg_node.label)?;
             }
             let last_insn = &self.instructions[cfg_node.instructions.end - 1];
             *last_basic_block = if last_insn.opc == ebpf::JA {
@@ -507,8 +545,7 @@ impl<'a> Analysis<'a> {
                 insn.ptr,
                 &mut last_basic_block,
             )?;
-            writeln!(output, "    {}", self.disassemble_instruction(insn, pc))
-                .map_err(|_| "fix this")?;
+            writeln_compat!(output, "    {}", self.disassemble_instruction(insn, pc))?;
         }
         Ok(())
     }
@@ -533,15 +570,14 @@ impl<'a> Analysis<'a> {
         for (index, entry) in trace_log.iter().enumerate() {
             let pc = entry[11] as usize;
             let insn = &self.instructions[pc_to_insn_index[pc]];
-            writeln!(
+            writeln_compat!(
                 output,
                 "{:5?} {:016X?} {:5?}: {}",
                 index,
                 &entry[0..11],
                 pc,
                 self.disassemble_instruction(insn, pc),
-            )
-            .map_err(|_| "fix this")?;
+            )?;
         }
         Ok(())
     }
@@ -589,7 +625,7 @@ impl<'a> Analysis<'a> {
             cfg_node_start: usize,
         ) -> Result<()> {
             let cfg_node = &analysis.cfg_nodes[&cfg_node_start];
-            writeln!(output, "    lbb_{} [label=<<table border=\"0\" cellborder=\"0\" cellpadding=\"3\">{}</table>>];",
+            writeln_compat!(output, "    lbb_{} [label=<<table border=\"0\" cellborder=\"0\" cellpadding=\"3\">{}</table>>];",
                 cfg_node_start,
                 analysis.instructions[cfg_node.instructions.clone()].iter()
                 .enumerate().map(|(pc, insn)| {
@@ -608,7 +644,7 @@ impl<'a> Analysis<'a> {
                     }
                 })
                 .collect::<String>()
-            ).map_err(|_| "fix this")?;
+            )?;
             if let Some(dynamic_analysis) = dynamic_analysis {
                 if let Some(recorded_edges) = dynamic_analysis.edges.get(&cfg_node_start) {
                     for destination in recorded_edges.keys() {
@@ -630,7 +666,7 @@ impl<'a> Analysis<'a> {
             }
             Ok(())
         }
-        writeln!(
+        writeln_compat!(
             output,
             "digraph {{
   graph [
@@ -648,8 +684,7 @@ impl<'a> Analysis<'a> {
   edge [
     fontname=\"Courier New\";
   ];"
-        )
-        .map_err(|_| "fix this")?;
+        )?;
         const MAX_CELL_CONTENT_LENGTH: usize = 15;
         let mut function_iter = self.functions.keys().peekable();
         while let Some(function_start) = function_iter.next() {
@@ -659,15 +694,13 @@ impl<'a> Analysis<'a> {
                 self.instructions.last().unwrap().ptr + 1
             };
             let mut alias_nodes = HashSet::new();
-            writeln!(output, "  subgraph cluster_{} {{", *function_start)
-                .map_err(|_| "fix this")?;
-            writeln!(
+            writeln_compat!(output, "  subgraph cluster_{} {{", *function_start)?;
+            writeln_compat!(
                 output,
                 "    label={:?};",
                 html_escape(&self.cfg_nodes[function_start].label)
-            )
-            .map_err(|_| "fix this")?;
-            writeln!(output, "    tooltip=lbb_{};", *function_start).map_err(|_| "fix this")?;
+            )?;
+            writeln_compat!(output, "    tooltip=lbb_{};", *function_start)?;
             emit_cfg_node(
                 output,
                 dynamic_analysis,
@@ -677,29 +710,27 @@ impl<'a> Analysis<'a> {
                 *function_start,
             )?;
             for alias_node in alias_nodes.iter() {
-                writeln!(
+                writeln_compat!(
                     output,
                     "    alias_{}_lbb_{} [",
-                    *function_start, *alias_node
-                )
-                .map_err(|_| "fix this")?;
-                writeln!(output, "        label=lbb_{:?};", *alias_node).map_err(|_| "fix this")?;
-                writeln!(output, "        tooltip=lbb_{:?};", *alias_node)
-                    .map_err(|_| "fix this")?;
-                writeln!(output, "        URL=\"#lbb_{:?}\";", *alias_node)
-                    .map_err(|_| "fix this")?;
-                writeln!(output, "    ];").map_err(|_| "fix this")?;
+                    *function_start,
+                    *alias_node
+                )?;
+                writeln_compat!(output, "        label=lbb_{:?};", *alias_node)?;
+                writeln_compat!(output, "        tooltip=lbb_{:?};", *alias_node)?;
+                writeln_compat!(output, "        URL=\"#lbb_{:?}\";", *alias_node)?;
+                writeln_compat!(output, "    ];")?;
             }
-            writeln!(output, "  }}").map_err(|_| "fix this")?;
+            writeln_compat!(output, "  }}")?;
         }
         for (function_range, cfg_node_start, cfg_node) in self.iter_cfg_by_function() {
             if cfg_node_start != cfg_node.dominator_parent {
-                writeln!(
+                writeln_compat!(
                     output,
                     "  lbb_{} -> lbb_{} [style=dotted; arrowhead=none];",
-                    cfg_node_start, cfg_node.dominator_parent,
-                )
-                .map_err(|_| "fix this")?;
+                    cfg_node_start,
+                    cfg_node.dominator_parent,
+                )?;
             }
             let mut edges: BTreeMap<usize, usize> = cfg_node
                 .destinations
@@ -720,7 +751,7 @@ impl<'a> Analysis<'a> {
             }
             let counter_sum: usize = edges.values().sum();
             if counter_sum == 0 && !edges.is_empty() {
-                writeln!(
+                writeln_compat!(
                     output,
                     "  lbb_{} -> {{{}}};",
                     cfg_node_start,
@@ -729,34 +760,32 @@ impl<'a> Analysis<'a> {
                         .map(|destination| format!("lbb_{}", *destination))
                         .collect::<Vec<String>>()
                         .join(" ")
-                )
-                .map_err(|_| "fix this")?;
+                )?;
             } else if let Some(dynamic_analysis) = dynamic_analysis {
                 for (destination, counter) in edges {
-                    write!(output, "  lbb_{cfg_node_start} -> ").map_err(|_| "fix this")?;
+                    write_compat!(output, "  lbb_{cfg_node_start} -> ")?;
                     if function_range.contains(&destination) {
-                        write!(output, "lbb_{destination}").map_err(|_| "fix this")?;
+                        write_compat!(output, "lbb_{destination}")?;
                     } else {
-                        write!(
+                        write_compat!(
                             output,
                             "alias_{0}_lbb_{1}",
-                            function_range.start, destination
-                        )
-                        .map_err(|_| "fix this")?;
+                            function_range.start,
+                            destination
+                        )?;
                     }
-                    writeln!(
+                    writeln_compat!(
                         output,
                         " [label=\"{}\";color=\"{} 1.0 {}.0\"];",
                         counter,
                         counter as f32 / (dynamic_analysis.edge_counter_max as f32 * 3.0)
                             + 2.0 / 3.0,
                         (counter != 0) as i32,
-                    )
-                    .map_err(|_| "fix this")?;
+                    )?;
                 }
             }
         }
-        writeln!(output, "}}").map_err(|_| "fix this")?;
+        writeln_compat!(output, "}}")?;
         Ok(())
     }
 
