@@ -46,6 +46,10 @@ mod compat {
     pub use std::{
         collections::BTreeMap,
         fmt::Debug,
+        mem,
+        ops::RangeInclusive,
+        ptr,
+        sync::Arc,
         vec::{self, Vec},
     };
 }

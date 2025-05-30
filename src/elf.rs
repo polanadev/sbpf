@@ -47,18 +47,8 @@ mod compat {
     use shuttle::sync::Arc;
 }
 
-// #[cfg(not(feature = "std"))]
-// macro_rules! println {
-//     ($($arg:tt)*) => {
-//         // TODO: implement based on target platform
-//         None
-//     };
-// }
-
 #[cfg(feature = "std")]
 mod compat {
-    #[cfg(not(feature = "shuttle-test"))]
-    use std::sync::Arc;
     pub use std::{
         collections::BTreeMap,
         fmt::Debug,
@@ -66,6 +56,7 @@ mod compat {
         ops::Range,
         println, str,
         string::{String, ToString},
+        sync::Arc,
         vec,
         vec::Vec,
     };

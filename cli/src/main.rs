@@ -10,7 +10,17 @@ use solana_sbpf::{
     verifier::RequisiteVerifier,
     vm::{Config, DynamicAnalysis, EbpfVm},
 };
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+use alloc::{sync::Arc, vec::Vec};
+#[cfg(not(feature = "std"))]
+use core::str;
+
+#[cfg(feature = "std")]
 use std::{fs::File, io::Read, path::Path, sync::Arc};
+
 use test_utils::TestContextObject;
 
 fn main() {
@@ -184,54 +194,54 @@ fn main() {
     } else {
         None
     };
-    match matches.value_of("use") {
-        Some("cfg") => {
-            let mut file = File::create("cfg.dot").unwrap();
-            analysis
-                .as_ref()
-                .unwrap()
-                .visualize_graphically(&mut file, None)
-                .unwrap();
-            return;
-        }
-        Some("disassembler") => {
-            let stdout = std::io::stdout();
-            analysis
-                .as_ref()
-                .unwrap()
-                .disassemble(&mut stdout.lock())
-                .unwrap();
-            return;
-        }
-        _ => {}
-    }
+    // match matches.value_of("use") {
+    //     Some("cfg") => {
+    //         let mut file = File::create("cfg.dot").unwrap();
+    //         analysis
+    //             .as_ref()
+    //             .unwrap()
+    //             .visualize_graphically(&mut file, None)
+    //             .unwrap();
+    //         return;
+    //     }
+    //     Some("disassembler") => {
+    //         let stdout = std::io::stdout();
+    //         analysis
+    //             .as_ref()
+    //             .unwrap()
+    //             .disassemble(&mut stdout.lock())
+    //             .unwrap();
+    //         return;
+    //     }
+    //     _ => {}
+    // }
 
-    if matches.value_of("use").unwrap() == "debugger" {
-        vm.debug_port = Some(matches.value_of("port").unwrap().parse::<u16>().unwrap());
-    }
+    // if matches.value_of("use").unwrap() == "debugger" {
+    //     vm.debug_port = Some(matches.value_of("port").unwrap().parse::<u16>().unwrap());
+    // }
     let (instruction_count, result) =
         vm.execute_program(&executable, matches.value_of("use").unwrap() != "jit");
     println!("Result: {result:?}");
     println!("Instruction Count: {instruction_count}");
-    if matches.is_present("trace") {
-        println!("Trace:\n");
-        let stdout = std::io::stdout();
-        analysis
-            .as_ref()
-            .unwrap()
-            .disassemble_trace_log(&mut stdout.lock(), &vm.context_object_pointer.trace_log)
-            .unwrap();
-    }
-    if matches.is_present("profile") {
-        let dynamic_analysis = DynamicAnalysis::new(
-            &vm.context_object_pointer.trace_log,
-            analysis.as_ref().unwrap(),
-        );
-        let mut file = File::create("profile.dot").unwrap();
-        analysis
-            .as_ref()
-            .unwrap()
-            .visualize_graphically(&mut file, Some(&dynamic_analysis))
-            .unwrap();
-    }
+    // if matches.is_present("trace") {
+    //     println!("Trace:\n");
+    //     let stdout = std::io::stdout();
+    //     analysis
+    //         .as_ref()
+    //         .unwrap()
+    //         .disassemble_trace_log(&mut stdout.lock(), &vm.context_object_pointer.trace_log)
+    //         .unwrap();
+    // }
+    // if matches.is_present("profile") {
+    //     let dynamic_analysis = DynamicAnalysis::new(
+    //         &vm.context_object_pointer.trace_log,
+    //         analysis.as_ref().unwrap(),
+    //     );
+    //     let mut file = File::create("profile.dot").unwrap();
+    //     analysis
+    //         .as_ref()
+    //         .unwrap()
+    //         .visualize_graphically(&mut file, Some(&dynamic_analysis))
+    //         .unwrap();
+    // }
 }

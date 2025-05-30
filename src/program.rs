@@ -23,11 +23,11 @@ mod compat {
 
 #[cfg(feature = "std")]
 mod compat {
-    pub use {
-        std::boxed::Box,
-        std::collections::{btree_map::Entry, BTreeMap},
-        std::vec,
-        std::vec::Vec,
+    pub use std::{
+        boxed::Box,
+        collections::{btree_map::Entry, BTreeMap},
+        fmt, mem, vec,
+        vec::Vec,
     };
 }
 

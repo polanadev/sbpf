@@ -43,7 +43,7 @@ winapi = { version = "0.3", features = [
 libc = { version = "0.2", optional = true }
 
 [features]
-default = ["jit"]
+default = ["jit", "std"]
 std = []
 jit = ["libc", "winapi"]
 jit-enable-host-stack-frames = ["jit"]

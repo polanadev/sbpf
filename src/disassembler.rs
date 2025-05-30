@@ -31,6 +31,7 @@ mod compat {
 #[cfg(feature = "std")]
 mod compat {
     pub use std::{
+        collections::BTreeMap,
         format,
         string::{String, ToString},
         vec::Vec,

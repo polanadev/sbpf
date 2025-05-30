@@ -17,7 +17,7 @@ mod compat {
 
 #[cfg(feature = "std")]
 mod compat {
-    pub use std::io::{Error, ErrorKind};
+    pub use std::io::{Error, ErrorKind, Write};
     pub use std::{
         fmt, mem, ops::Range, ptr, slice, string::String, string::ToString, vec, vec::Vec,
     };

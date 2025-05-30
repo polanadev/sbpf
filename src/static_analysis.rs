@@ -33,8 +33,12 @@ mod compat {
 #[cfg(feature = "std")]
 mod compat {
     pub use std::{
+        cmp,
         collections::{BTreeMap, BTreeSet, HashMap, HashSet},
         format,
+        io::Write,
+        mem,
+        ops::Range,
         string::{String, ToString},
         vec,
         vec::Vec,
@@ -94,7 +98,7 @@ pub struct CfgNode {
     /// Successors which the end of this basic block can jump to
     pub destinations: Vec<usize>,
     /// Range of the instructions belonging to this basic block
-    pub instructions: ops::Range<usize>,
+    pub instructions: Range<usize>,
     /// Topological index
     pub topo_index: TopologicalIndex,
     /// Immediate dominator (the last control flow junction)

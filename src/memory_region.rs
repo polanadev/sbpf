@@ -39,7 +39,7 @@ mod compat {
         array,
         boxed::Box,
         cell::{Cell, UnsafeCell},
-        fmt, mem,
+        cmp, fmt, mem,
         ops::Range,
         ptr::{self, copy_nonoverlapping},
         vec,

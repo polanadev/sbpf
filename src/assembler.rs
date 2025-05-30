@@ -44,11 +44,11 @@ mod compat {
 mod compat {
     #[cfg(feature = "shuttle-test")]
     use shuttle::sync::Arc;
-    #[cfg(not(feature = "shuttle-test"))]
-    use std::sync::Arc;
     pub use std::{
+        collections::HashMap,
         format,
         string::{String, ToString},
+        sync::Arc,
         vec::Vec,
     };
 }

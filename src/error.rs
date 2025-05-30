@@ -27,6 +27,7 @@ mod compat {
     pub use std::{
         boxed::Box,
         error::Error,
+        fmt, ptr,
         string::{String, ToString},
         vec,
         vec::Vec,
