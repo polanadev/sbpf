@@ -13,7 +13,16 @@ use solana_sbpf::program::SBPFVersion;
 use solana_sbpf::{
     assembler::assemble, program::BuiltinProgram, static_analysis::Analysis, vm::Config,
 };
+#[cfg(feature = "std")]
 use std::sync::Arc;
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+use alloc::sync::Arc;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+
 use test_utils::TestContextObject;
 
 // Using a macro to keep actual line numbers in failure output
@@ -30,9 +39,22 @@ macro_rules! disasm {
         let loader = BuiltinProgram::new_loader($config);
         let executable = assemble::<TestContextObject>(src, Arc::new(loader)).unwrap();
         let analysis = Analysis::from_executable(&executable).unwrap();
-        let mut reasm = Vec::new();
-        analysis.disassemble(&mut reasm).unwrap();
-        assert_eq!(src, String::from_utf8(reasm).unwrap());
+
+        #[cfg(not(feature = "std"))]
+        {
+            let mut reasm = vec![0u8; 512];
+            analysis.disassemble(&mut reasm.as_mut_slice()).unwrap();
+            assert_eq!(
+                src,
+                String::from_utf8(reasm).unwrap().trim_end_matches('\0')
+            );
+        }
+        #[cfg(feature = "std")]
+        {
+            let mut reasm = Vec::new();
+            analysis.disassemble(&mut reasm).unwrap();
+            assert_eq!(src, String::from_utf8(reasm).unwrap());
+        }
     }};
 }
 

@@ -10,8 +10,19 @@ use solana_sbpf::{
     program::{BuiltinProgram, FunctionRegistry, SBPFVersion},
     static_analysis::Analysis,
 };
-use std::sync::Arc;
 use test_utils::TestContextObject;
+#[cfg(not(feature = "std"))]
+mod compat {
+    extern crate alloc;
+    pub use alloc::sync::Arc;
+}
+
+#[cfg(feature = "std")]
+mod compat {
+    pub use std::sync::Arc;
+}
+
+pub use compat::*;
 
 // Simply disassemble a program into human-readable instructions.
 fn main() {
@@ -39,7 +50,16 @@ fn main() {
         FunctionRegistry::default(),
     )
     .unwrap();
+
     let analysis = Analysis::from_executable(&executable).unwrap();
-    let stdout = std::io::stdout();
-    analysis.disassemble(&mut stdout.lock()).unwrap();
+    #[cfg(not(feature = "std"))]
+    {
+        let mut output = Vec::<u8>::new();
+        analysis.disassemble(&mut output.as_mut_slice()).unwrap();
+    }
+    #[cfg(feature = "std")]
+    {
+        let stdout = std::io::stdout();
+        analysis.disassemble(&mut stdout.lock()).unwrap();
+    }
 }

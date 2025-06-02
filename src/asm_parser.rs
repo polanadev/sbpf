@@ -27,7 +27,6 @@ mod compat {
     extern crate alloc;
     pub use alloc::{
         collections::{BTreeMap, BTreeSet},
-        format,
         string::{String, ToString},
         vec::Vec,
     };
@@ -715,6 +714,7 @@ exit
     #[test]
     fn test_error_eof() {
         // Unexpected end of input in a register name.
+        #[cfg(feature = "std")]
         assert_eq!(
             parse("lsh r"),
             Err(
@@ -722,17 +722,22 @@ exit
                     .to_string()
             )
         );
+        #[cfg(not(feature = "std"))]
+        assert_eq!(parse("exit\n^"), Err("Parse error".to_string()));
     }
 
     #[test]
     fn test_error_unexpected_character() {
         // Unexpected character at end of input.
+        #[cfg(feature = "std")]
         assert_eq!(
             parse("exit\n^"),
             Err(
                 "Parse error at line 2 column 1: unexpected '^', expected letter or digit, expected '_', expected '.', expected whitespaces, expected end of input".to_string()
             )
         );
+        #[cfg(not(feature = "std"))]
+        assert_eq!(parse("exit\n^"), Err("Parse error".to_string()));
     }
 
     #[test]

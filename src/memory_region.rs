@@ -958,7 +958,16 @@ impl MappingCache {
 
 #[cfg(test)]
 mod test {
+    #[cfg(not(feature = "std"))]
+    extern crate alloc;
+    #[cfg(not(feature = "std"))]
+    use alloc::rc::Rc;
+    #[cfg(not(feature = "std"))]
+    use core::cell::RefCell;
+
+    #[cfg(feature = "std")]
     use std::{cell::RefCell, rc::Rc};
+
     use test_utils::assert_error;
 
     use super::*;
