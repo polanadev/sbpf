@@ -43,7 +43,6 @@ winapi = { version = "0.3", features = [
 libc = { version = "0.2", optional = true }
 
 [features]
-# Look at why --no-default-features isn't being respected when we have features here
 default = []
 std = ["byteorder/std", "log/std", "thiserror/std", "combine/std", "rand/std"]
 jit = ["libc", "winapi"]
